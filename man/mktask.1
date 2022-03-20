@@ -1,0 +1,124 @@
+.\"
+.\" BSD Zero Clause License
+.\"
+.\" Copyright (c) 2022 Thomas Voss
+.\"
+.\" Permission to use, copy, modify, and/or distribute this software for any
+.\" purpose with or without fee is hereby granted.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+.\" REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+.\" AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+.\" INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+.\" LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+.\" OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+.\" PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: March 20 2022 $
+.Dt MKTASK 1
+.Os
+.Sh NAME
+.Nm mktask
+.Nd write task files to standard output
+.Sh SYNOPSIS
+.Nm
+.Fl a | o | u Ar datetime
+.Ar title
+.Op Ar author ...
+.Nm
+.Fl a Ar datetime
+.Fl u Ar datetime
+.Ar title
+.Op Ar author ...
+.Sh DESCRIPTION
+The
+.Nm
+utility reads from the standard input and outputs a well formatted task file to
+the standard output.
+The data read from the standard input forms the body of the task while the
+heading of the task file is specified via the command line arguments.
+The first non-option argument provided to
+.Nm
+specifies the task title while the remaining optional arguments specifiy the
+.Pf author Pq s
+of the task.
+.Pp
+.Nm
+also has 3 options which can be used to specify the datetime frame of the task.
+Each of these options takes a
+.Ar datetime
+as an argument in either the format
+.Dq %H:%M %Y-%m%d
+using
+.Xr date 1
+syntax, or using a custom short syntax.
+The short syntax is in the form
+.Dq N[M]
+where
+.Sq N
+is a date delta and
+.Sq M
+is an optional modifier.
+Date deltas are relative to the current UTC date.
+A positive delta
+.Sq N
+represents the date N days in the future while a negative delta
+.Sq \-N
+represents the date N days in the past.
+The special delta
+.Sq \&.
+represents the current date.
+The syntax supports the two modifiers
+.Sq ^
+and
+.Sq $ .
+The modifier
+.Sq ^
+represents the time 00:00 on the day represented by the delta while the modifier
+.Sq $
+represents the time 23:59.
+Example usages can be found in the
+.Sx EXAMPLES
+section
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl a Ar datetime
+Specify the date and time after which the task must be completed.
+This option can be used in union with the
+.Fl u
+option to specify a range of time.
+.It Fl o Ar datetime
+Specify the date and time on which the task must be completed.
+This option cannot be used in union with any other.
+.It Fl u Ar datetime
+Specify the date and time before which the task must be completed.
+This option can be used in union with the
+.Fl a
+option to specify a range of time.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Set a task with no body which must be completed by the end of 2 days from the
+current day:
+.Pp
+.Dl $ mktask -u '2$' 'Review Dimitars Merge Request' Thomas < /dev/null
+.Pp
+Set a task which can be completed at any time from the current time:
+.Pp
+.Dl $ mktask -a \&. 'Finish Writing mktask(1) manual' Thomas < task-details
+.Pp
+Set a task which must be completed from the beginning of the previous day to
+midday on the first of Feburary:
+.Pp
+.Dl $ mktask -a \-1^ -u '12:00 2022-02-01' 'Throw out the Trash' Thomas Lucas \e
+.Dl "	< task-details"
+.Sh SEE ALSO
+.Xr date 1 ,
+.Xr taskfree 3 ,
+.Xr taskread 3 ,
+.Xr taskwrite 3 ,
+.Xr task 5
+.Sh AUTHORS
+.An Thomas Voss Aq Mt thomasvoss@live.com
