@@ -6,6 +6,7 @@ LDFLAGS = -ltask
 PREFIX  = /usr
 
 binaries = mktask
+mandir   = man
 
 all: ${binaries}
 
@@ -16,8 +17,9 @@ mktask: src/mktask.c
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ src/mktask.c
 
 install:
-	mkdir -p ${PREFIX}/bin
+	mkdir -p ${PREFIX}/bin ${PREFIX}/share/man/man1
 	cp ${binaries} ${PREFIX}/bin
+	cp ${mandir}/*.1 ${PREFIX}/share/man/man1
 
 clean:
 	rm -f ${binaries}
