@@ -15,7 +15,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
 #include <ctype.h>
 #include <err.h>
 #include <stdbool.h>
@@ -81,9 +81,15 @@ main(int argc, char **argv)
 		usage(argv[0]);
 
 	argv += optind;
+#ifndef DEBUG
 	tsk.title = *argv;
 	while (*++argv)
 		authoradd(&tsk, *argv);
+#else
+	tsk.title = strdup(*argv);
+	while (*++argv)
+		authoradd(&tsk, strdup(*argv));
+#endif
 
 	/* Set the start and end times if we are using them.  The `timeparse'
 	 * function will take the string representation of the time and convert
@@ -97,6 +103,13 @@ main(int argc, char **argv)
 
 	if ((err = taskwrite(stdout, tsk)) != 0)
 		errx(EXIT_FAILURE, "taskwrite: %s", strerror(err));
+
+#ifdef DEBUG
+	/* We can just not include this code at all for better performance, but
+	 * we want to free the task when debugging to more easily find bugs with
+	 * valgrind or whatever. */
+	taskfree(tsk);
+#endif
 
 	return EXIT_SUCCESS;
 }
