@@ -16,6 +16,7 @@
  */
 
 #define _XOPEN_SOURCE
+#include <ctype.h>
 #include <err.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -26,16 +27,25 @@
 
 #include <task.h>
 
-static void usage(const char *argv0);
-static void setnow(struct tm *dest);
 static void authoradd(struct task *tsk, char *s);
 static void bodyadd(struct task *tsk);
+static void setnoweoff(struct tm *dest, time_t off);
+static void setnowoff(struct tm *dest, time_t off);
+static void setnowsoff(struct tm *dest, time_t off);
+static void stimeparse(struct tm *dest, char *s);
+static void timeparse(struct tm *dest, char *s);
+static void usage(const char *argv0);
+
+const char *badstimemod =
+	"invalid short datetime modifier '%s', only '^' and '$' can be used";
+const char *badstimestart =
+	"short datetime must start with either '.' or a decimal integer";
 
 int
 main(int argc, char **argv)
 {
 	int err, opt;
-	char *s, *st, *et;
+	char *st, *et;
 	bool aflag, oflag, uflag;
 	struct task tsk = {0};
 
@@ -75,18 +85,13 @@ main(int argc, char **argv)
 	while (*++argv)
 		authoradd(&tsk, *argv);
 
-	if (st != NULL) {
-		if (strcmp(st, ".") == 0)
-			setnow(&tsk.start);
-		else if ((s = strptime(st, "%H:%M %Y-%m-%d", &tsk.start)) == NULL || *s != '\0')
-			errx(EXIT_FAILURE, "Invalid datetime format");
-	}
-	if (et != NULL) {
-		if (strcmp(et, ".") == 0)
-			setnow(&tsk.end);
-		else if ((s = strptime(et, "%H:%M %Y-%m-%d", &tsk.end)) == NULL || *s != '\0')
-			errx(EXIT_FAILURE, "Invalid datetime format");
-	}
+	/* Set the start and end times if we are using them.  The `timeparse'
+	 * function will take the string representation of the time and convert
+	 * it into a `struct tm'. */
+	if (st != NULL)
+		timeparse(&tsk.start, st);
+	if (et != NULL)
+		timeparse(&tsk.end, et);
 
 	bodyadd(&tsk);
 
@@ -97,17 +102,72 @@ main(int argc, char **argv)
 }
 
 void
-setnow(struct tm *dest)
+timeparse(struct tm *dest, char *s)
+{
+	char *r;
+
+	if ((r = strptime(s, "%H:%M %Y-%m-%d", dest)) == NULL || *r != '\0')
+		stimeparse(dest, s);
+}
+
+void
+stimeparse(struct tm *dest, char *s)
+{
+	long off;
+	char *ptr;
+
+	if (s[0] == '.') {
+		if (s[1] == '\0')
+			setnowoff(dest, 0);
+		else if (s[1] == '^' && s[2] == '\0')
+			setnowsoff(dest, 0);
+		else if (s[1] == '$' && s[2] == '\0')
+			setnoweoff(dest, 0);
+		else
+			errx(EXIT_FAILURE, badstimemod, s + 1);
+	} else if (s[0] == '+' || s[0] == '-' || isdigit(s[0])) {
+		off = strtol(s, &ptr, 10);
+		if (*ptr == '\0')
+			setnowoff(dest, off * 86400);
+		else if (*ptr == '^' && *(ptr + 1) == '\0')
+			setnowsoff(dest, off * 86400);
+		else if (*ptr == '$' && *(ptr + 1) == '\0')
+			setnoweoff(dest, off * 86400);
+		else
+			errx(EXIT_FAILURE, badstimemod, s);
+	} else
+		errx(EXIT_FAILURE, badstimestart, s);
+}
+
+void
+setnowoff(struct tm *dest, time_t off)
 {
 	time_t t;
 	struct tm *src;
 
 	if ((t = time(NULL)) == (time_t) -1)
 		err(EXIT_FAILURE, "time");
+	t += off;
 	if ((src = gmtime(&t)) == NULL)
 		err(EXIT_FAILURE, "gmtime");
 
 	memcpy(dest, src, sizeof(struct tm));
+}
+
+void
+setnowsoff(struct tm *dest, time_t off)
+{
+	setnowoff(dest, off);
+	dest->tm_min = 0;
+	dest->tm_hour = 0;
+}
+
+void
+setnoweoff(struct tm *dest, time_t off)
+{
+	setnowoff(dest, off);
+	dest->tm_min = 59;
+	dest->tm_hour = 23;
 }
 
 void
