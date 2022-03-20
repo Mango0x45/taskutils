@@ -9,6 +9,9 @@ binaries = mktask
 
 all: ${binaries}
 
+debug:
+	make 'CFLAGS+=-DDEBUG -g -ggdb -Og'
+
 mktask: src/mktask.c
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ src/mktask.c
 
