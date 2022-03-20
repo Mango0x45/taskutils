@@ -194,7 +194,8 @@ authoradd(struct task *tsk, char *s)
 		cap = 7;
 	} else if (tsk->author_cnt == cap) {
 		cap *= 2;
-		if ((tsk->authors = realloc(tsk->authors, sizeof(char *) * cap + 1)) == NULL)
+		if ((tsk->authors = realloc(tsk->authors,
+					    sizeof(char *) * cap + 1)) == NULL)
 			err(EXIT_FAILURE, "realloc");
 	}
 
