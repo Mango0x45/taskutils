@@ -41,7 +41,7 @@
 
 void mktaskdir(void);
 int dirsize(void);
-int taskadd(int fd, int id);
+void taskadd(int fd, int id);
 
 int rval;
 
@@ -112,7 +112,7 @@ dirsize(void)
 	return cnt;
 }
 
-int
+void
 taskadd(int ifd, int id)
 {
 	int ofd, nr;
@@ -132,5 +132,4 @@ taskadd(int ifd, int id)
 		err(EXIT_FAILURE, "read: '%s'", fname);
 
 	close(ofd);
-	return 0;
 }
