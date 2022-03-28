@@ -1,0 +1,66 @@
+.\"
+.\" BSD Zero Clause License
+.\"
+.\" Copyright (c) 2022 Thomas Voss
+.\"
+.\" Permission to use, copy, modify, and/or distribute this software for any
+.\" purpose with or without fee is hereby granted.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+.\" REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+.\" AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+.\" INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+.\" LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+.\" OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+.\" PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: March 28 2022 $
+.Dt ADDTASK 1
+.Os
+.Sh NAME
+.Nm addtask
+.Nd add a task to the tasks directory
+.Sh SYNOPSIS
+.Nm Op Ar
+.Sh DESCRIPTION
+The
+.Nm
+utility reads input either from the standard input or from files provided as
+command line arguments and writes each input to a file in the task directory.
+If a given input file has the name
+.Sq -
+then input is taken from the standard input.
+The task files written to the task directory are named starting at 0 and
+incrementing with each next file.
+The task directory where input is written to is located at
+.Pa $XDG_DATA_HOME/tasks.
+If the
+.Ev XDG_DATA_HOME
+environment variable is not set then the input is written to
+.Pa ~/.local/share/tasks .
+.Sh ENVIRONMENT
+.Bl -tag -width XDG_DATA_HOME
+.It Ev XDG_DATA_HOME
+The directory where the
+.Pa tasks
+directory will be located.
+If this environment variable is unset then the default location of
+.Pa ~/.local/share/
+is used.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Add two tasks.  One task created with the
+.Xr mktask 1
+utility and one task stored in a pre-existing file:
+.Pp
+.Dl $ mktask -o . 'Take Exam' | addtask study-for-exam.task -
+.Sh SEE ALSO
+.Xr mktask 1 ,
+.Xr taskfree 3 ,
+.Xr taskread 3 ,
+.Xr taskwrite 3 ,
+.Xr task 5
+.Sh AUTHORS
+.An Thomas Voss Aq Mt thomasvoss@live.com
