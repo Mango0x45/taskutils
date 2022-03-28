@@ -43,18 +43,18 @@ void mktaskdir(void);
 int dirsize(void);
 void taskadd(int fd, int id);
 
-int rval;
-
 int
 main(int argc, char **argv)
 {
-	int rfd, ffd, fcnt;
+	int rfd, ffd;
+	int rval, fcnt;
 
 	if ((rfd = open(".", O_PATH)) == -1)
 		err(EXIT_FAILURE, "open: '.'");
 
 	mktaskdir();
 	fcnt = dirsize();
+	rval = EXIT_SUCCESS;
 
 	if (argc == 1)
 		taskadd(STDIN_FILENO, fcnt++);
