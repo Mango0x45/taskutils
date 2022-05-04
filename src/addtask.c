@@ -29,6 +29,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <task.h>
+
 #ifndef O_PATH
 	#define O_PATH O_RDONLY
 #endif
@@ -40,33 +42,36 @@
 #define NOHOME "the 'HOME' environment variable must be set"
 
 void mktaskdir(void);
-int dirsize(void);
-void taskadd(int fd, int id);
+void taskadd(FILE *instream);
+
+int rval;
 
 int
 main(int argc, char **argv)
 {
 	int rfd, ffd;
-	int rval, fcnt;
+	FILE *stream;
 
 	if ((rfd = open(".", O_PATH)) == -1)
 		err(EXIT_FAILURE, "open: '.'");
 
 	mktaskdir();
-	fcnt = dirsize();
-	rval = EXIT_SUCCESS;
 
 	if (argc == 1)
-		taskadd(STDIN_FILENO, fcnt++);
+		taskadd(stdin);
 	else while (*++argv) {
 		if (strcmp(*argv, "-") == 0)
-			taskadd(STDIN_FILENO, fcnt++);
+			taskadd(stdin);
 		else if ((ffd = openat(rfd, *argv, O_RDONLY)) == -1) {
 			warn("openat: '%s'", *argv);
 			rval = EXIT_FAILURE;
 		} else {
-			taskadd(ffd, fcnt++);
-			close(ffd);
+			if ((stream = fdopen(ffd, "r")) == NULL) {
+				warn("fdopen: '%s'", *argv);
+				rval = EXIT_FAILURE;
+			}
+			taskadd(stream);
+			fclose(stream);
 		}
 	}
 
@@ -93,43 +98,28 @@ mktaskdir(void)
 		err(EXIT_FAILURE, "chdir: '%s'", tdir);
 }
 
-int
-dirsize(void)
-{
-	int cnt = 0;
-	DIR *dirp;
-	struct dirent *e;
-
-	if ((dirp = opendir(".")) == NULL)
-		err(EXIT_FAILURE, "opendir: '%s'", realpath(".", NULL));
-
-	while ((e = readdir(dirp)) != NULL) {
-		if (e->d_type == DT_REG)
-			cnt++;
-	}
-
-	closedir(dirp);
-	return cnt;
-}
-
 void
-taskadd(int ifd, int id)
+taskadd(FILE *instream)
 {
-	int ofd, nr;
-	char fname[9], buf[BUFSIZ];
+	FILE *outstream;
+	struct task tsk;
 
-	sprintf(fname, "%08d", id);
-	fname[8] = '\0';
+	taskread(instream, &tsk);
 
-	if ((ofd = creat(fname, DEFFILEMODE)) == -1)
-		err(EXIT_FAILURE, "creat: '%s'", fname);
-
-	while ((nr = read(ifd, buf, BUFSIZ)) > 0) {
-		if (write(ofd, buf, nr) == -1)
-			err(EXIT_FAILURE, "write: '%s'", fname);
+	outstream = fopen(tsk.title, "r");
+	if (outstream == NULL && errno == ENOENT) {
+		if ((outstream = fopen(tsk.title, "w")) == NULL)
+			goto err_cant_open;
+		taskwrite(outstream, tsk);
+		fclose(outstream);
+	} else if (outstream == NULL) {
+err_cant_open:
+		warn("fopen: '%s'", tsk.title);
+		rval = EXIT_FAILURE;
+	} else {
+		warnx("task with name '%s' already exists", tsk.title);
+		rval = EXIT_FAILURE;
 	}
-	if (nr == -1)
-		err(EXIT_FAILURE, "read: '%s'", fname);
 
-	close(ofd);
+	taskfree(tsk);
 }
